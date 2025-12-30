@@ -16,9 +16,10 @@ connectDB();
 app.post("/api/v1/signup", async (req, res) => {
     const { username, password } = req.body;
     try {
+        const hashedPassword = await bcrypt.hash(password, 10);
         await UserModel.create({
             username: username,
-            password: password,
+            password: hashedPassword,
         });
         res.send("user has been created sucessfully");
     }
@@ -33,17 +34,20 @@ app.post("/api/v1/signin", async (req, res) => {
     const password = req.body.password;
     try {
         const currentuser = await UserModel.findOne({
-            username,
-            password,
+            username
         });
         if (!currentuser) {
             return res.status(401).json({ message: "Invalid credentials ❌" });
         }
-        if (currentuser) {
+        const isMatch = await bcrypt.compare(password, currentuser.password);
+        if (isMatch) {
             const token = jwt.sign({ id: currentuser._id }, jwt_key);
             res.json({
                 token,
             });
+        }
+        else {
+            res.status(401).json({ message: "Invalid credentials ❌" });
         }
     }
     catch (error) {
@@ -90,14 +94,21 @@ app.get("/api/v1/content", userMiddleware, async (req, res) => {
 });
 app.delete("/api/v1/content", userMiddleware, async (req, res) => {
     const contentId = req.body.contentId;
-    await ContentModel.deleteMany({
-        contentId: contentId,
-        //@ts-ignore
-        userId: req.userId
-    });
-    res.json({
-        message: "content deleted"
-    });
+    try {
+        await ContentModel.deleteMany({
+            _id: contentId,
+            //@ts-ignore
+            userId: req.userId
+        });
+        res.json({
+            message: "content deleted"
+        });
+    }
+    catch (e) {
+        res.status(500).json({
+            message: "Error deleting content"
+        });
+    }
 });
 app.post("/api/v1/brain/share", userMiddleware, async (req, res) => {
     const { share } = req.body;

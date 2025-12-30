@@ -19,9 +19,10 @@ app.post("/api/v1/signup", async (req, res) => {
   const { username, password } = req.body;
 
   try {
+    const hashedPassword = await bcrypt.hash(password, 10);
     await UserModel.create({
       username: username,
-      password: password,
+      password: hashedPassword,
     });
     res.send("user has been created sucessfully");
   } catch (error) {
@@ -36,17 +37,21 @@ app.post("/api/v1/signin", async (req, res) => {
   const password = req.body.password;
   try {
     const currentuser = await UserModel.findOne({
-      username,
-      password,
+      username
     });
     if (!currentuser) {
       return res.status(401).json({ message: "Invalid credentials ❌" });
     }
-    if (currentuser) {
+
+    const isMatch = await bcrypt.compare(password, currentuser.password as string);
+
+    if (isMatch) {
       const token = jwt.sign({ id: currentuser._id }, jwt_key);
       res.json({
         token,
       });
+    } else {
+      res.status(401).json({ message: "Invalid credentials ❌" });
     }
   } catch (error) {
     res.status(500).json({ message: "Server error 🔥" });
@@ -54,7 +59,7 @@ app.post("/api/v1/signin", async (req, res) => {
 });
 
 app.post("/api/v1/content", userMiddleware, async (req, res) => {
-  const { title, link,type } = req.body;
+  const { title, link, type } = req.body;
 
   try {
     await ContentModel.create({
@@ -62,7 +67,7 @@ app.post("/api/v1/content", userMiddleware, async (req, res) => {
       link: link,
       //@ts-ignore
       userId: req.userId,
-      type:type,
+      type: type,
       tags: [],
     });
     return res.json({
@@ -80,7 +85,7 @@ app.get("/api/v1/content", userMiddleware, async (req, res) => {
   const userId = req.userId;
   const content = await ContentModel.find({
     userId: userId,
-  }).populate("userId","username userId");
+  }).populate("userId", "username userId");
   if (content) {
     res.json({
       content,
@@ -92,18 +97,25 @@ app.get("/api/v1/content", userMiddleware, async (req, res) => {
   }
 });
 
-app.delete("/api/v1/content",userMiddleware, async (req,res) => {
-    const contentId = req.body.contentId;
+app.delete("/api/v1/content", userMiddleware, async (req, res) => {
+  const contentId = req.body.contentId;
+  try {
     await ContentModel.deleteMany({
-        contentId:contentId,
-        //@ts-ignore
-        userId : req.userId
-    })
+      _id: contentId,
+      //@ts-ignore
+      userId: req.userId
+    });
     res.json({
-        message:"content deleted"
-    })
-    
-})
+      message: "content deleted"
+    });
+  } catch (e) {
+    res.status(500).json({
+      message: "Error deleting content"
+    });
+  }
+});
+
+
 
 app.post("/api/v1/brain/share", userMiddleware, async (req, res) => {
   const { share } = req.body;
@@ -129,7 +141,7 @@ app.post("/api/v1/brain/share", userMiddleware, async (req, res) => {
     });
 
     return res.json({
-      message:hash
+      message: hash
     });
   }
 
