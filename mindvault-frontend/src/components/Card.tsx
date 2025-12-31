@@ -2,6 +2,15 @@ import { TrashIcon } from "../icons/TrashIcon";
 import { ShareIcon } from "../icons/ShareIcon";
 import { PlusIcon } from "../icons/PlusIcon";
 
+function getYouTubeEmbedUrl(url: string) {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+
+  return (match && match[2].length === 11)
+    ? `https://www.youtube.com/embed/${match[2]}`
+    : url;
+}
+
 interface CardProps {
   title: string;
   link: string;
@@ -32,7 +41,7 @@ export function Card({ title, link, type, onDelete }: CardProps) {
         <div className="pt-5">
           {type === "youtube" && <iframe
             className="w-full"
-            src={link.replace("watch", "embed").replace("?v=", "/")}
+            src={getYouTubeEmbedUrl(link)}
             title="YouTube video player"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

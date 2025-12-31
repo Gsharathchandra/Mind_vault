@@ -27,9 +27,14 @@ export function DashBoard() {
     <><div>
       <Sidebar />
       <div className='p-4 ml-72 min-h-screen bg-gray-100 border-2'>
-        <CreateContentModel open={modelOpen} onClose={() => {
-          setModelOpen(false);
-        }} />
+        <CreateContentModel
+          open={modelOpen}
+          onClose={() => setModelOpen(false)}
+          onContentAdded={() => {
+            setModelOpen(false);
+            refresh();
+          }}
+        />
         <div className='flex justify-end gap-4'>
           <Button variant='primary' text='Add content' StartIcon={<PlusIcon />} onClick={() => {
             setModelOpen(true);
@@ -47,8 +52,6 @@ export function DashBoard() {
         </div>
         <div className='flex gap-4 flex-wrap'>
           {contents.map(({ type, link, title, _id }) => <Card key={_id} type={type} link={link} title={title} onDelete={() => handleDelete(_id)}></Card>)}
-          <Card type="twitter" link='https://x.com/RishabhPant17/status/1985279701380972664/photo/1' title='rp tweet'></Card>
-          <Card type="youtube" link='https://www.youtube.com/watch?v=t8m4VOSXQ8w' title='yt video1'></Card>
         </div>
       </div>
     </div>

@@ -42,7 +42,7 @@
 //                   setType(ContentType.Twitter)
 //                 }} text="Twitter" variant = {type === ContentType.Twitter ? "primary" : "secondary"}></Button>
 //                 </div>
-               
+
 //               </div>
 //               <div className="flex justify-center">
 //                 <Button onClick={addcontent} variant="primary" text="Submit"></Button>
@@ -55,24 +55,28 @@
 //   );
 // }
 
- import { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { CrossIcon } from "../icons/CrossIcon";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { BACKEND_URL } from "../config";
 import axios from "axios";
 
-enum ContentType {
-  Youtube = "youtube",
-  Twitter = "twitter",
-}
+const ContentType = {
+  Youtube: "youtube",
+  Twitter: "twitter",
+} as const;
+
+type ContentType = typeof ContentType[keyof typeof ContentType];
 
 export function CreateContentModel({
   open,
   onClose,
+  onContentAdded,
 }: {
   open: boolean;
   onClose: () => void;
+  onContentAdded: () => void;
 }) {
   const titleref = useRef<HTMLInputElement>(null);
   const linkref = useRef<HTMLInputElement>(null);
@@ -81,15 +85,16 @@ export function CreateContentModel({
   async function addcontent() {
     const title = titleref.current?.value;
     const link = linkref.current?.value;
-    await axios.post(`${BACKEND_URL}/api/v1/content`,{
-      link,title,type
-    },{
-      headers:{
-        "Authorization":localStorage.getItem("token")
+    await axios.post(`${BACKEND_URL}/api/v1/content`, {
+      link, title, type
+    }, {
+      headers: {
+        "Authorization": localStorage.getItem("token")
       }
     })
-    
-     onClose();
+
+    // Call the refresh callback
+    onContentAdded();
   }
 
   return (
